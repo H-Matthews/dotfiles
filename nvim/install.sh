@@ -4,74 +4,154 @@
 #   - Neovim itself (via the official .tar.gz release, since apt's version
 #     usually lags and there is no official .deb from neovim/neovim)
 #   - A C compiler (needed to build treesitter parsers)
-#   - tree-sitter-cli 0.26.1+ (needed by nvim-treesitter's main branch)
+#   - tree-sitter-cli (needed by nvim-treesitter's main branch)
 #   - ripgrep (used by Telescope's live grep)
 
 set -euo pipefail
 
-MIN_TS_VERSION="0.26.1"
+# ---------------------------------------------------------------------------
+# Pinned versions — bump these to upgrade a tool
+# ---------------------------------------------------------------------------
 
-version_ge() {
-  # Returns 0 (true) if $1 >= $2
-  [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]
+NVIM_VERSION="0.12.5"
+TS_VERSION="0.27.0"
+
+NVIM_RELEASE_BASE_URL="https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}"
+TS_RELEASE_BASE_URL="https://github.com/tree-sitter/tree-sitter/releases/download/v${TS_VERSION}"
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+get_arch() {
+  local arch
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64)  echo "x86_64" ;;
+    aarch64) echo "aarch64" ;;
+    *) echo "    Unrecognized architecture ($arch) — install manually." >&2 && exit 1 ;;
+  esac
 }
 
-echo "==> Neovim"
-if command -v nvim &> /dev/null; then
-  echo "    Already installed: $(nvim --version | head -n1)"
-else
-  echo "    Not found. Downloading latest release..."
-  ARCH="$(uname -m)"
-  case "$ARCH" in
-    x86_64)  NVIM_ASSET="nvim-linux-x86_64.tar.gz"; NVIM_DIR="nvim-linux-x86_64" ;;
-    aarch64) NVIM_ASSET="nvim-linux-arm64.tar.gz";  NVIM_DIR="nvim-linux-arm64" ;;
-    *) echo "    Unrecognized architecture ($ARCH) — install Neovim manually." && exit 1 ;;
+ensure_apt_package() {
+  sudo apt update
+  sudo apt install -y "$@"
+}
+
+# install_tarball_binary <url> <opt-dir-name> <bin-rel-path> <link-name>
+#   Downloads a .tar.gz, extracts it to /opt, and symlinks the binary.
+install_tarball_binary() {
+  local url="$1" dir_name="$2" bin_rel="$3" link_name="$4"
+  local tmp
+  tmp="$(mktemp --suffix=.tar.gz)"
+  curl -Lo "$tmp" "$url"
+  sudo rm -rf "/opt/${dir_name}"
+  sudo tar -C /opt -xzf "$tmp"
+  sudo ln -sf "/opt/${dir_name}/${bin_rel}" "/usr/local/bin/${link_name}"
+  rm -f "$tmp"
+}
+
+# install_gz_binary <url> <dest-name>
+#   Downloads a gzip-compressed binary and installs it to /usr/local/bin.
+install_gz_binary() {
+  local url="$1" dest_name="$2"
+  local tmp
+  tmp="$(mktemp --suffix=.gz)"
+  curl -Lo "$tmp" "$url"
+  gunzip -c "$tmp" | sudo tee "/usr/local/bin/${dest_name}" > /dev/null
+  sudo chmod +x "/usr/local/bin/${dest_name}"
+  rm -f "$tmp"
+}
+
+# ---------------------------------------------------------------------------
+# Install functions
+# ---------------------------------------------------------------------------
+
+install_neovim() {
+  echo "==> Neovim (pinned: ${NVIM_VERSION})"
+  local current
+  current="$(nvim --version 2>/dev/null | head -n1 | awk '{print $2}' || echo "")"
+  current="${current#v}"
+
+  if command -v nvim &>/dev/null && [ "$current" = "$NVIM_VERSION" ]; then
+    echo "    Already installed: ${current}"
+    return
+  fi
+
+  echo "    Installing v${NVIM_VERSION}..."
+  local arch asset dir_name
+  arch="$(get_arch)"
+  case "$arch" in
+    x86_64)  asset="nvim-linux-x86_64.tar.gz"; dir_name="nvim-linux-x86_64" ;;
+    aarch64) asset="nvim-linux-arm64.tar.gz";  dir_name="nvim-linux-arm64" ;;
   esac
-  TMP_TGZ="$(mktemp --suffix=.tar.gz)"
-  curl -Lo "$TMP_TGZ" "https://github.com/neovim/neovim/releases/latest/download/${NVIM_ASSET}"
-  sudo rm -rf "/opt/${NVIM_DIR}"
-  sudo tar -C /opt -xzf "$TMP_TGZ"
-  sudo ln -sf "/opt/${NVIM_DIR}/bin/nvim" /usr/local/bin/nvim
-  rm -f "$TMP_TGZ"
+
+  install_tarball_binary \
+    "${NVIM_RELEASE_BASE_URL}/${asset}" \
+    "$dir_name" \
+    "bin/nvim" \
+    "nvim"
+
   echo "    Installed: $(nvim --version | head -n1)"
-fi
+}
 
-echo "==> C compiler"
-if command -v cc &> /dev/null || command -v gcc &> /dev/null; then
-  echo "    Already installed."
-else
+ensure_c_compiler() {
+  echo "==> C compiler"
+  if command -v cc &>/dev/null || command -v gcc &>/dev/null; then
+    echo "    Already installed."
+    return
+  fi
+
   echo "    Not found. Installing build-essential..."
-  sudo apt update
-  sudo apt install -y build-essential
-fi
+  ensure_apt_package build-essential
+}
 
-echo "==> tree-sitter-cli"
-CURRENT_TS_VERSION="$(tree-sitter --version 2>/dev/null | awk '{print $2}' || echo "0.0.0")"
-if command -v tree-sitter &> /dev/null && version_ge "$CURRENT_TS_VERSION" "$MIN_TS_VERSION"; then
-  echo "    Already installed: $CURRENT_TS_VERSION"
-else
-  echo "    Missing or outdated (found: $CURRENT_TS_VERSION, need: $MIN_TS_VERSION+). Installing prebuilt binary..."
-  ARCH="$(uname -m)"
-  case "$ARCH" in
-    x86_64)  TS_ASSET="tree-sitter-linux-x64.gz" ;;
-    aarch64) TS_ASSET="tree-sitter-linux-arm64.gz" ;;
-    *) echo "    Unrecognized architecture ($ARCH) — install tree-sitter-cli manually." && exit 1 ;;
+install_tree_sitter() {
+  echo "==> tree-sitter-cli (pinned: ${TS_VERSION})"
+  local current
+  current="$(tree-sitter --version 2>/dev/null | awk '{print $2}' || echo "")"
+
+  if command -v tree-sitter &>/dev/null && [ "$current" = "$TS_VERSION" ]; then
+    echo "    Already installed: ${current}"
+    return
+  fi
+
+  echo "    Installing v${TS_VERSION}..."
+  local arch asset
+  arch="$(get_arch)"
+  case "$arch" in
+    x86_64)  asset="tree-sitter-linux-x64.gz" ;;
+    aarch64) asset="tree-sitter-linux-arm64.gz" ;;
   esac
-  TMP_GZ="$(mktemp --suffix=.gz)"
-  curl -Lo "$TMP_GZ" "https://github.com/tree-sitter/tree-sitter/releases/latest/download/${TS_ASSET}"
-  gunzip -c "$TMP_GZ" | sudo tee /usr/local/bin/tree-sitter > /dev/null
-  sudo chmod +x /usr/local/bin/tree-sitter
-  rm -f "$TMP_GZ"
+
+  install_gz_binary \
+    "${TS_RELEASE_BASE_URL}/${asset}" \
+    "tree-sitter"
+
   echo "    Installed: $(tree-sitter --version)"
-fi
+}
 
-echo "==> ripgrep"
-if command -v rg &> /dev/null; then
-  echo "    Already installed."
-else
+ensure_ripgrep() {
+  echo "==> ripgrep"
+  if command -v rg &>/dev/null; then
+    echo "    Already installed."
+    return
+  fi
+
   echo "    Not found. Installing..."
-  sudo apt update
-  sudo apt install -y ripgrep
-fi
+  ensure_apt_package ripgrep
+}
 
-echo "==> nvim package dependencies satisfied."
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+main() {
+  install_neovim
+  ensure_c_compiler
+  install_tree_sitter
+  ensure_ripgrep
+  echo "==> nvim package dependencies satisfied."
+}
+
+main
