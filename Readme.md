@@ -25,7 +25,7 @@ This installs GNU Stow (if missing), installs each package's own dependencies, a
 
 ```bash
 cd <path-to-repo>/dotfiles
-chmod 755 uninstall.sh
+chmod +755 uninstall.sh
 ./uninstall.sh
 ```
 
