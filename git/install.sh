@@ -13,4 +13,4 @@ else
   sudo apt install -y git
 fi
 
-echo "==> git package dependencies satisfied.
+echo "==> git package dependencies satisfied."
