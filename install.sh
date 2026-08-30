@@ -14,26 +14,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "==> Checking for GNU Stow..."
-if ! command -v stow &> /dev/null; then
-  echo "    Not found. Installing via apt (requires sudo)..."
-  sudo apt update
-  sudo apt install -y stow
-else
-  echo "    Already installed: $(stow --version | head -n1)"
-fi
+# ---------------------------------------------------------------------------
+# Functions
+# ---------------------------------------------------------------------------
 
-echo "==> Setting up packages..."
-for dir in */; do
-  package="${dir%/}"
-
-  # Skip hidden/non-package directories (e.g. .git)
-  if [[ "$package" == .* ]]; then
-    continue
+ensure_stow() {
+  echo "==> Checking for GNU Stow..."
+  if ! command -v stow &>/dev/null; then
+    echo "    Not found. Installing via apt (requires sudo)..."
+    sudo apt update
+    sudo apt install -y stow
+  else
+    echo "    Already installed: $(stow --version | head -n1)"
   fi
+}
 
-  echo ""
-  echo "--- $package ---"
+setup_package() {
+  local package="$1"
 
   # Link dotfiles first. --ignore keeps this script's own install.sh out of
   # the symlink (it's a bootstrap helper, not a dotfile to place in $HOME).
@@ -44,10 +41,32 @@ for dir in */; do
 
   # Then run the package's own install script, if it has one
   if [[ -f "$package/install.sh" ]]; then
-    chmod +x "$package/install.sh"
+    chmod +755 "$package/install.sh"
     (cd "$package" && ./install.sh)
   fi
-done
+}
 
-echo ""
-echo "==> Done. All packages installed and linked into \$HOME."
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+main() {
+  ensure_stow
+
+  echo "==> Setting up packages..."
+  for dir in */; do
+    local package="${dir%/}"
+
+    # Skip hidden/non-package directories (e.g. .git)
+    [[ "$package" == .* ]] && continue
+
+    echo ""
+    echo "--- $package ---"
+    setup_package "$package"
+  done
+
+  echo ""
+  echo "==> Done. All packages installed and linked into \$HOME."
+}
+
+main
