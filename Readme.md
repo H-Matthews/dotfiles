@@ -15,11 +15,22 @@ Personal configuration managed with [GNU Stow](https://www.gnu.org/software/stow
 ```bash
 git clone git@github.com:H-Matthews/dotfiles.git ~/git_repos/dotfiles
 cd ~/git_repos/dotfiles
-chmod +x install.sh
+chmod +755 install.sh
 ./install.sh
 ```
 
 This installs GNU Stow (if missing), installs each package's own dependencies, and symlinks everything into `$HOME`. Safe to re-run any time — every step checks before it acts.
+
+## Clean (Uninstall)
+
+```bash
+cd <path-to-repo>/dotfiles
+chmod 755 uninstall.sh
+./uninstall.sh
+```
+
+Removes every symlink this repo created from `$HOME`, cleanly -- run this **before** deleting the repo. Deleting the repo first leaves broken symlinks behind, since nothing else knows to clean them up.
+Note: This only removes the dotfiles links, not the tools themselves.`
 
 ## Adding a new package
 
