@@ -1,0 +1,28 @@
+# dotfiles
+
+Personal configuration managed with [GNU Stow](https://www.gnu.org/software/stow/) and bootstrapped with a single script.
+
+## Included
+
+| Package | Contains |
+|---|---|
+| `git/` | `.gitconfig` |
+| `nvim/` | Neovim config |
+| `zsh/` | `.zshrc`, modular `.zsh/` scripts, Oh My Zsh |
+
+## Install
+
+```bash
+git clone <your-repo-url> ~/git_repos/dotfiles
+cd ~/git_repos/dotfiles
+chmod +x install.sh
+./install.sh
+```
+
+This installs GNU Stow (if missing), installs each package's own dependencies, and symlinks everything into `$HOME`. Safe to re-run any time — every step checks before it acts.
+
+## Adding a new package
+
+1. `mkdir <tool>` and mirror the real target path inside it (e.g. `tool/.config/tool/...`)
+2. Optionally add `tool/install.sh` to install that tool and its dependencies (see `nvim/install.sh` for the pattern)
+3. `stow --no-folding <tool>` — or just re-run `./install.sh`, which picks up new packages automatically
