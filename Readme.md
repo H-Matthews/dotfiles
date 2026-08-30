@@ -13,7 +13,7 @@ Personal configuration managed with [GNU Stow](https://www.gnu.org/software/stow
 ## Install
 
 ```bash
-git clone <your-repo-url> ~/git_repos/dotfiles
+git clone git@github.com:H-Matthews/dotfiles.git ~/git_repos/dotfiles
 cd ~/git_repos/dotfiles
 chmod +x install.sh
 ./install.sh
