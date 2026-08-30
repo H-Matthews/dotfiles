@@ -1,4 +1,4 @@
-#!/usr/bin/env bash`
+#!/usr/bin/env bash
 #
 # Bootstraps this dotfiles repo on a new machine:
 #   1. Installs GNU Stow if it isn't already present
