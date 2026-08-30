@@ -35,14 +35,18 @@ for dir in */; do
   echo ""
   echo "--- $package ---"
 
-  # Run the package's own install script, if it has one
+  # Link dotfiles first. --ignore keeps this script's own install.sh out of
+  # the symlink (it's a bootstrap helper, not a dotfile to place in $HOME).
+  # Linking before running install.sh matters for tools like Oh My Zsh,
+  # which behave differently if the target config file already exists.
+  echo "    Linking $package..."
+  stow --no-folding --ignore='^install\.sh$' "$package"
+
+  # Then run the package's own install script, if it has one
   if [[ -f "$package/install.sh" ]]; then
     chmod +x "$package/install.sh"
     (cd "$package" && ./install.sh)
   fi
-
-  echo "    Linking $package..."
-  stow --no-folding "$package"
 done
 
 echo ""

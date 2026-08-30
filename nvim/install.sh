@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Installs Neovim and everything its config depends on:
-#   - Neovim itself (via the official .deb, since apt's version usually lags)
+#   - Neovim itself (via the official .tar.gz release, since apt's version
+#     usually lags and there is no official .deb from neovim/neovim)
 #   - A C compiler (needed to build treesitter parsers)
 #   - tree-sitter-cli 0.26.1+ (needed by nvim-treesitter's main branch)
 #   - ripgrep (used by Telescope's live grep)
@@ -20,11 +21,19 @@ if command -v nvim &> /dev/null; then
   echo "    Already installed: $(nvim --version | head -n1)"
 else
   echo "    Not found. Downloading latest release..."
-  TMP_DEB="$(mktemp --suffix=.deb)"
-  curl -Lo "$TMP_DEB" \
-    "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.deb"
-  sudo apt install -y "$TMP_DEB"
-  rm -f "$TMP_DEB"
+  ARCH="$(uname -m)"
+  case "$ARCH" in
+    x86_64)  NVIM_ASSET="nvim-linux-x86_64.tar.gz"; NVIM_DIR="nvim-linux-x86_64" ;;
+    aarch64) NVIM_ASSET="nvim-linux-arm64.tar.gz";  NVIM_DIR="nvim-linux-arm64" ;;
+    *) echo "    Unrecognized architecture ($ARCH) — install Neovim manually." && exit 1 ;;
+  esac
+  TMP_TGZ="$(mktemp --suffix=.tar.gz)"
+  curl -Lo "$TMP_TGZ" "https://github.com/neovim/neovim/releases/latest/download/${NVIM_ASSET}"
+  sudo rm -rf "/opt/${NVIM_DIR}"
+  sudo tar -C /opt -xzf "$TMP_TGZ"
+  sudo ln -sf "/opt/${NVIM_DIR}/bin/nvim" /usr/local/bin/nvim
+  rm -f "$TMP_TGZ"
+  echo "    Installed: $(nvim --version | head -n1)"
 fi
 
 echo "==> C compiler"
