@@ -14,22 +14,45 @@ Personal configuration managed with [GNU Stow](https://www.gnu.org/software/stow
 
 ```bash
 cd <path-to-repo>/dotfiles
-chmod +755 install.sh
 ./install.sh
 ```
 
-This installs GNU Stow (if missing), installs each package's own dependencies, and symlinks everything into `$HOME`. Safe to re-run any time — every step checks before it acts.
+Installs GNU Stow (if missing), installs each package's own dependencies, and symlinks everything into `$HOME`. Safe to re-run any time — every step checks before it acts.
+
+To install or re-stow a specific package only:
+
+```bash
+./install.sh nvim         # one package
+./install.sh nvim zsh     # multiple packages
+```
 
 ## Clean (Uninstall)
 
 ```bash
 cd <path-to-repo>/dotfiles
-chmod +755 uninstall.sh
-./uninstall.sh
+./clean.sh
 ```
 
-Removes every symlink this repo created from `$HOME`, cleanly -- run this **before** deleting the repo. Deleting the repo first leaves broken symlinks behind, since nothing else knows to clean them up.
-Note: This only removes the dotfiles links, not the tools themselves.`
+Removes every symlink this repo created from `$HOME`, cleanly — run this **before** deleting the repo. Deleting the repo first leaves broken symlinks behind, since nothing else knows to clean them up.
+
+Note: this only removes the dotfile links, not the tools themselves.
+
+## Pinned versions
+
+Neovim and tree-sitter-cli are downloaded at explicit versions defined at the top of `nvim/install.sh`:
+
+| Variable | Tool |
+|---|---|
+| `NVIM_VERSION` | Neovim |
+| `TS_VERSION` | tree-sitter-cli |
+
+To upgrade either tool, bump the variable and re-run:
+
+```bash
+./install.sh nvim
+```
+
+The script detects the version mismatch and reinstalls automatically.
 
 ## Adding a new package
 

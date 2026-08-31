@@ -51,6 +51,14 @@ setup_package() {
 # ---------------------------------------------------------------------------
 
 main() {
+  # Validate any explicitly requested packages before doing any work
+  for pkg in "$@"; do
+    if [[ ! -d "$pkg" ]]; then
+      echo "Error: unknown package '$pkg'" >&2
+      exit 1
+    fi
+  done
+
   ensure_stow
 
   echo "==> Setting up packages..."
@@ -60,13 +68,22 @@ main() {
     # Skip hidden/non-package directories (e.g. .git)
     [[ "$package" == .* ]] && continue
 
+    # If specific packages were requested, skip all others
+    if [[ $# -gt 0 ]] && [[ ! " $* " == *" $package "* ]]; then
+      continue
+    fi
+
     echo ""
     echo "--- $package ---"
     setup_package "$package"
   done
 
   echo ""
-  echo "==> Done. All packages installed and linked into \$HOME."
+  if [[ $# -gt 0 ]]; then
+    echo "==> Done. Package(s) installed and linked: $*"
+  else
+    echo "==> Done. All packages installed and linked into \$HOME."
+  fi
 }
 
-main
+main "$@"
