@@ -2,6 +2,21 @@
 vim.opt.number = true
 vim.opt.relativenumber = true
 
+vim.opt.list = true
+vim.opt.listchars = {
+  tab = '» ',
+  trail = '·',
+  extends = '›',
+  precedes = '‹',
+  nbsp = '␣',
+}
+
+vim.api.nvim_create_autocmd('ColorScheme', {
+  callback = function()
+    vim.api.nvim_set_hl(0, 'Whitespace', { link = 'Comment' })
+  end,
+})
+
 -- Indentation Settings
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4

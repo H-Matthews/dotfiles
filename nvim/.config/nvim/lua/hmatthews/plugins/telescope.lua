@@ -41,9 +41,15 @@ return {
       return { noremap = true, silent = true, desc = desc }
     end
 
-    keymap("n", "<leader><space>", builtin.find_files, opts("Find files in project"))
-    keymap("n", "<leader>fg", builtin.live_grep, opts("Search text across project (grep)"))
-    keymap("n", "<leader>fb", builtin.buffers, opts("Search active open buffers"))
-    keymap("n", "<leader>fh", builtin.help_tags, opts("Search NeoVim help documentation"))
+    keymap("n", "<leader>ff", builtin.find_files, opts("Find files in project"))
+    keymap("n", "<leader>fg", function() builtin.live_grep({ grep_open_files = true }) end, opts("Grep open files"))
+    keymap("n", "<leader>fp", builtin.live_grep, opts("Grep Project"))
+    keymap("n", "<leader>fh", builtin.help_tags, opts("Find NeoVim help documentation"))
+    keymap("n", "<leader>fr", builtin.oldfiles, opts("Find recent files"))
+    keymap("n", "<leader>fs", builtin.grep_string, opts("Find string under cursor"))
+    keymap("n", "<leader>fd", builtin.diagnostics, opts("Find diagnostics"))
+    keymap("n", "<leader>fc", builtin.git_commits, opts("Find git commits"))
+
+    keymap("n", "<leader><leader>", builtin.buffers, opts("Quick Switch Buffer"))
   end,
 }

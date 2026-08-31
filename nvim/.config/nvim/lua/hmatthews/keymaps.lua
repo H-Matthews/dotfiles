@@ -7,9 +7,10 @@ local function opts(desc)
 end
 
 -- General & File Management
-keymap("n", "<leader>w", ":w<CR>", opts("Save file"))          
+keymap("n", "<leader>w", ":w<CR>", opts("Save file"))
 keymap("n", "<leader>q", ":q<CR>", opts("Quit Window"))
 keymap("n", "<leader>h", ":nohlsearch<CR>", opts("Clear search highlight"))
+keymap("n", "<leader>uw", function() vim.opt.list = not vim.opt.list:get() end, opts("Toggle whitespace chars"))
 
 -- Easy Window Navigation (Ctrl + h/j/k/l)
 keymap("n", "<C-h>", "<C-w>h", opts("Move focus to left split"))
