@@ -31,7 +31,39 @@ keymap("n", "<C-Right>", ":vertical resize +2<CR>", opts("Increase window width"
 -- Buffer Management & Navigation
 keymap("n", "<S-h>", ":bprevious<CR>", opts("Switch to previous buffer"))
 keymap("n", "<S-l>", ":bnext<CR>", opts("Switch to next buffer"))
-keymap("n", "<leader>bd", ":bdelete<CR>", opts("Close active buffer"))
+
+-- Plain `:bdelete` closes any *window* that has no other buffer to fall back on
+-- (this is documented Neovim behavior, see `:help bdelete`) -- including a sibling
+-- split showing the same buffer. Move every affected window off the buffer first
+-- so the split layout survives.
+local function delete_buffer_keep_window()
+  local target = vim.api.nvim_get_current_buf()
+
+  local fallback = vim.fn.bufnr("#")
+  if fallback == target or vim.fn.buflisted(fallback) ~= 1 then
+    fallback = -1
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if buf ~= target and vim.fn.buflisted(buf) == 1 then
+        fallback = buf
+        break
+      end
+    end
+  end
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_buf(win) == target then
+      if fallback ~= -1 then
+        vim.api.nvim_win_set_buf(win, fallback)
+      else
+        vim.api.nvim_win_call(win, function() vim.cmd("enew") end)
+      end
+    end
+  end
+
+  vim.cmd("bdelete " .. target)
+end
+
+keymap("n", "<leader>bd", delete_buffer_keep_window, opts("Close active buffer"))
 
 -- Visual Mode Manipulation
 keymap("v", "<", "<gv", opts("Indent selection left (keep visual zone)"))
