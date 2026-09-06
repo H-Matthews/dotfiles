@@ -1,5 +1,4 @@
 local keymap = vim.keymap.set
-local opts = { noremap = true, silent = true }
 
 -- Helper function for generating options with custom description for Which-Key
 local function opts(desc)
@@ -24,8 +23,8 @@ keymap("n", "<leader>sh", ":split<CR>", opts("Split window horizontally"))
 keymap("n", "<leader>se", "<C-w>=", opts("Make split sizes equal"))
 
 -- Window Resizing
-keymap("n", "<C-Up", ":resize -2<CR>", opts("Decrease window height"))
-keymap("n", "<C-Down", ":resize +2<CR>", opts("Increase window height"))
+keymap("n", "<C-Up>", ":resize -2<CR>", opts("Decrease window height"))
+keymap("n", "<C-Down>", ":resize +2<CR>", opts("Increase window height"))
 keymap("n", "<C-Left>", ":vertical resize -2<CR>", opts("Decrease window width"))
 keymap("n", "<C-Right>", ":vertical resize +2<CR>", opts("Increase window width"))
 
