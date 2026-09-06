@@ -29,8 +29,8 @@ keymap("n", "<C-Left>", ":vertical resize -2<CR>", opts("Decrease window width")
 keymap("n", "<C-Right>", ":vertical resize +2<CR>", opts("Increase window width"))
 
 -- Buffer Management & Navigation
-keymap("n", "<S-h>", ":bprevious<CR>", opts("Switch to previous buffer"))
-keymap("n", "<S-l>", ":bnext<CR>", opts("Switch to next buffer"))
+keymap("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", opts("Switch to previous buffer"))
+keymap("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", opts("Switch to next buffer"))
 
 -- Plain `:bdelete` closes any *window* that has no other buffer to fall back on
 -- (this is documented Neovim behavior, see `:help bdelete`) -- including a sibling
