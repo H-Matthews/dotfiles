@@ -5,3 +5,5 @@ ZSH_CONFIG_DIR="$HOME/.zsh"
 for file in exports plugins aliases functions; do
   source "$ZSH_CONFIG_DIR/$file.zsh"
 done
+
+git_ssh
