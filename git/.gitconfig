@@ -2,4 +2,11 @@
 	email = hmatthews070@gmail.com
 	name = Harrison
 [core]
+	# -F: quit automatically if output fits on screen
+	# -R: output raw ANSI color escape sequences
+	# -X: don't clear the screen on exit
+	pager = less -FRX
 	editor = nvim
+[pager]
+	# Optionally disable the pager for branch listings specifically
+	branch = false
